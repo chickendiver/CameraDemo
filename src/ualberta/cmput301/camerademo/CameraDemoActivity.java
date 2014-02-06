@@ -1,5 +1,7 @@
 package ualberta.cmput301.camerademo;
 
+import java.io.File;
+
 import ualberta.cmput301.camerodemo.R;
 import android.app.Activity;
 import android.content.Intent;
@@ -7,7 +9,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -44,14 +48,52 @@ public class CameraDemoActivity extends Activity {
 	// finishes, while startActivityForResult() method will. To retrieve the returned result, you may 
 	// need implement onAcitityResult() method.
 	public void takeAPhoto() {
-		Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-		startActivityForResult(intent, 0);
+		
+		private String TAG = "Main"; 
+		//create file path
+        File imageDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/mnt/sdcard/temp/bm.jpg");
+        boolean success = imageDirectory.mkdirs();
+        if (success){
+        	 Log.d(TAG,"Folder created.");
+        }
+        else{
+        	Log.d(TAG,"Folder not created");
+        }
+        
+
+        //create file uri
+        final Uri fileUri = Uri.parse(imageDirectory.getAbsolutePath());
+
+        //create camera intent
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        //put file Uri to intent - this will tell camera where to save file with image
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+        
+        // start activity
+        startActivityForResult(intent, 0);
+
+        //start image scanned to add photo to gallery
+        //addProductPhotoToGallery(fileUri);
+		
 	}
 	
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		//super.onActivityResult(requestCode, resultCode, data);
 		if(requestCode == 0){
 			if (resultCode == RESULT_OK){
+				
+				//Backup bitmap storage
 				Bitmap bm = (Bitmap) data.getExtras().getParcelable("data");
+				
+				
+				Uri imageUri = data.getData();
+				try{	
+					bm = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+				}
+				catch(Exception e){
+					e.printStackTrace();
+				}
 				
 				imageButton.setImageBitmap(Bitmap.createScaledBitmap(bm, imageButton.getWidth(), imageButton.getHeight(), false));
 				
